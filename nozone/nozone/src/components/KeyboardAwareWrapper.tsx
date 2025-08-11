@@ -23,6 +23,7 @@ interface KeyboardAwareWrapperProps {
   offset?: number; // Additional offset from keyboard (default: 20)
   animationType?: 'spring' | 'timing';
   enabled?: boolean;
+  maxShiftRatio?: number; // Max portion of available height to shift (default: 0.4)
 }
 
 export const KeyboardAwareWrapper: React.FC<KeyboardAwareWrapperProps> = ({
@@ -31,6 +32,7 @@ export const KeyboardAwareWrapper: React.FC<KeyboardAwareWrapperProps> = ({
   offset = 20,
   animationType = 'spring',
   enabled = true,
+  maxShiftRatio = 0.4,
 }) => {
   const translateY = useSharedValue(0);
   const insets = useSafeAreaInsets();
@@ -48,7 +50,7 @@ export const KeyboardAwareWrapper: React.FC<KeyboardAwareWrapperProps> = ({
       // Calculate how much to move up to keep content just above keyboard
       const moveUpAmount = Math.min(
         keyboardHeight + offset - insets.bottom,
-        availableHeight * 0.4 // Maximum 40% of screen height
+        availableHeight * maxShiftRatio // Limit shift by ratio
       );
 
       if (animationType === 'spring') {

@@ -10,10 +10,14 @@ import {
   Animated,
   Vibration,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  UIManager,
+  findNodeHandle,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
-import MaskedView from '@react-native-masked-view/masked-view';
 import BrandTitle from '../components/BrandTitle';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
@@ -41,7 +45,6 @@ export interface LoginScreenProps {
   onLogin: (user: User) => void;
 }
 
-const AnimatedTextInput = Reanimated.createAnimatedComponent(TextInput);
 const AnimatedTouchableOpacity = Reanimated.createAnimatedComponent(TouchableOpacity);
 
 type AuthMode = 'login' | 'register' | 'forgot';
@@ -78,6 +81,30 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
   // Animated Ref
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const usernameTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const scrollRef = useRef<ScrollView>(null);
+  const nameInputRef = useRef<TextInput>(null);
+  const usernameInputRef = useRef<TextInput>(null);
+  const passwordInputRef = useRef<TextInput>(null);
+  const confirmInputRef = useRef<TextInput>(null);
+
+  const scrollIntoView = (ref: React.RefObject<TextInput | null>) => {
+    try {
+      const inputNode = ref.current ? findNodeHandle(ref.current) : null;
+      const scrollNode = scrollRef.current ? findNodeHandle(scrollRef.current) : null;
+      if (inputNode && scrollNode) {
+        UIManager.measureLayout(
+          inputNode,
+          scrollNode,
+          () => {},
+          (x, y, w, h) => {
+            // Scroll so the input top is visible with a small margin
+            const targetY = Math.max(0, y - 24);
+            scrollRef.current?.scrollTo({ y: targetY, animated: true });
+          }
+        );
+      }
+    } catch {}
+  };
 
   useEffect(() => {
     // Entry animation
@@ -396,7 +423,16 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
     <SafeAreaView style={styles.container}>
       <StatusBar style="dark" />
       
-      <KeyboardAwareWrapper offset={40} animationType="spring">
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      >
+        <KeyboardAwareWrapper
+          offset={Platform.OS === 'ios' ? 4 : 0}
+          maxShiftRatio={Platform.OS === 'ios' ? 0.25 : 0}
+          enabled={Platform.OS === 'ios'}
+        >
         {/* Dynamic Gradient Background */}
         <LinearGradient
           colors={['#FFFFFF', '#FFFFFF']}
@@ -413,8 +449,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
       {/* Floating Particles */}
   {/* Particles removed */}
 
-      {/* Main Card */}
-      <Reanimated.View style={[styles.cardContainer, cardAnimatedStyle]}>
+  {/* Main Card */}
+  <Reanimated.View style={[styles.cardContainer, cardAnimatedStyle]}>
   <View style={styles.card}>
           {/* Progress Indicator */}
           <View style={styles.progressContainer}>
@@ -449,11 +485,18 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
           {/* Form */}
           <Reanimated.View style={[styles.formContainer, formAnimatedStyle]}>
+            <ScrollView
+              ref={scrollRef}
+              keyboardShouldPersistTaps="handled"
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: Platform.OS === 'ios' ? 4 : 0 }}
+            >
             {/* Name Field (Register only) */}
             {authMode === 'register' && (
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Full Name</Text>
-                <AnimatedTextInput
+                <TextInput
+                  ref={nameInputRef}
                   style={[styles.input, nameError ? styles.inputError : null]}
                   value={name}
                   onChangeText={setName}
@@ -461,6 +504,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                   placeholderTextColor="#64748B"
                   autoCapitalize="words"
                   maxLength={50}
+                  onFocus={() => scrollIntoView(nameInputRef)}
                 />
                 {nameError ? <Text style={styles.errorText}>{nameError}</Text> : null}
               </View>
@@ -470,7 +514,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Username</Text>
               <View style={styles.inputWithIcon}>
-                <AnimatedTextInput
+                <TextInput
+                  ref={usernameInputRef}
                   style={[
                     styles.input, 
                     usernameError ? styles.inputError : null,
@@ -483,6 +528,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                   autoCapitalize="none"
                   autoCorrect={false}
                   maxLength={20}
+                  onFocus={() => scrollIntoView(usernameInputRef)}
                 />
                 {authMode === 'register' && (
                   <View style={styles.inputIcon}>
@@ -505,7 +551,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Password</Text>
               <View style={styles.inputWithIcon}>
-                <AnimatedTextInput
+                <TextInput
+                  ref={passwordInputRef}
                   style={[styles.input, passwordError ? styles.inputError : null]}
                   value={password}
                   onChangeText={setPassword}
@@ -513,6 +560,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                   placeholderTextColor="#64748B"
                   secureTextEntry={!showPassword}
                   maxLength={128}
+                  onFocus={() => scrollIntoView(passwordInputRef)}
                 />
                 <TouchableOpacity
                   style={styles.inputIcon}
@@ -532,7 +580,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
             {authMode === 'register' && (
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Confirm Password</Text>
-                <AnimatedTextInput
+                <TextInput
+                  ref={confirmInputRef}
                   style={[styles.input, password !== confirmPassword && confirmPassword ? styles.inputError : null]}
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
@@ -540,6 +589,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
                   placeholderTextColor="#64748B"
                   secureTextEntry={!showPassword}
                   maxLength={128}
+                  onFocus={() => scrollIntoView(confirmInputRef)}
                 />
                 {password !== confirmPassword && confirmPassword ? (
                   <Text style={styles.errorText}>Passwords do not match</Text>
@@ -571,10 +621,12 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({ onLogin }) => {
 
 
             {/* Test auth button removed for production */}
+            </ScrollView>
           </Reanimated.View>
   </View>
       </Reanimated.View>
-      </KeyboardAwareWrapper>
+        </KeyboardAwareWrapper>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -638,7 +690,9 @@ const styles = StyleSheet.create({
     width: width * 0.9,
     maxWidth: 400,
     borderRadius: 24,
-    padding: 32,
+  paddingTop: 32,
+  paddingHorizontal: 32,
+  paddingBottom: 20,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#E2E8F0',

@@ -102,6 +102,7 @@ export const lightTheme = {
     lg: 24,
     xl: 32,
     xxl: 48,
+    xxxl: 64,
   },
   
   borderRadius: {
@@ -223,6 +224,48 @@ export const typography = {
   fonts: lightTheme.fonts,
   fontSizes: lightTheme.fontSizes,
   lineHeights: lightTheme.lineHeights,
+  
+  // Predefined text styles
+  h1: {
+    fontFamily: lightTheme.fonts.bold,
+    fontSize: lightTheme.fontSizes.xxxl,
+    lineHeight: lightTheme.lineHeights.xxxl,
+  },
+  h2: {
+    fontFamily: lightTheme.fonts.bold,
+    fontSize: lightTheme.fontSizes.xxl,
+    lineHeight: lightTheme.lineHeights.xxl,
+  },
+  h3: {
+    fontFamily: lightTheme.fonts.semibold,
+    fontSize: lightTheme.fontSizes.xl,
+    lineHeight: lightTheme.lineHeights.xl,
+  },
+  h4: {
+    fontFamily: lightTheme.fonts.semibold,
+    fontSize: lightTheme.fontSizes.lg,
+    lineHeight: lightTheme.lineHeights.lg,
+  },
+  body: {
+    fontFamily: lightTheme.fonts.regular,
+    fontSize: lightTheme.fontSizes.md,
+    lineHeight: lightTheme.lineHeights.md,
+  },
+  bodyMedium: {
+    fontFamily: lightTheme.fonts.medium,
+    fontSize: lightTheme.fontSizes.md,
+    lineHeight: lightTheme.lineHeights.md,
+  },
+  small: {
+    fontFamily: lightTheme.fonts.regular,
+    fontSize: lightTheme.fontSizes.sm,
+    lineHeight: lightTheme.lineHeights.sm,
+  },
+  caption: {
+    fontFamily: lightTheme.fonts.regular,
+    fontSize: lightTheme.fontSizes.xs,
+    lineHeight: lightTheme.lineHeights.xs,
+  },
 };
 
 export type Typography = typeof typography;

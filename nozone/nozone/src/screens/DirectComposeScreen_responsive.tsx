@@ -68,6 +68,14 @@ export const DirectComposeScreen: React.FC<DirectComposeScreenProps> = ({
     setTimeout(() => {
       usernameInputRef.current?.focus();
     }, 600);
+
+    // Cleanup timers on unmount to avoid setState on unmounted component
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current as any);
+        searchTimeoutRef.current = null;
+      }
+    };
   }, []);
 
   const animateScreenIn = async () => {

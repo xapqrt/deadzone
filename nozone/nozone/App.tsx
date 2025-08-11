@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { StyleSheet, View, BackHandler } from 'react-native';
+import { StyleSheet, View, BackHandler, ErrorUtils } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
@@ -33,6 +33,7 @@ import { StorageService } from './src/services/storage';
 import { AuthService } from './src/services/auth';
 import { PerformanceService } from './src/services/performanceService';
 import { initCrashReporting, captureException } from './src/services/crashReporter';
+import { DebugLogger } from './src/utils/debugLogger';
 import { logger } from './src/utils/logger';
 import { Env } from './src/utils/env';
 import { OfflineQueueService } from './src/services/offlineQueueService';
@@ -55,6 +56,9 @@ export const ThemeContext = React.createContext<{ theme: Theme; toggle: () => vo
 type Screen = 'login' | 'home' | 'queue' | 'compose' | 'composeWithUsers' | 'settings' | 'profile' | 'directInbox' | 'directCompose' | 'directChat' | 'uiShowcase' | 'responsiveDemo' | 'enhancementsDemo';
 
 export default function App() {
+  // Add early crash detection
+  console.log('🚀 App component loading...');
+  
   const [currentScreen, setCurrentScreen] = useState<Screen>('login');
   const [user, setUser] = useState<User | null>(null);
   const [editingMessage, setEditingMessage] = useState<Message | null>(null);
@@ -113,52 +117,94 @@ export default function App() {
   });
 
   useEffect(() => {
+    // Initialize debug logging first
+    DebugLogger.init();
+    console.log('🔧 Debug logger initialized');
+    
     PerformanceService.trackAppStartup();
     initCrashReporting().catch(e => logger.error('Crash reporter init failed', e));
     initializeApp();
-    // Global error capture (RN fatal)
-    const origHandler = ErrorUtils.getGlobalHandler?.();
-    if (ErrorUtils.setGlobalHandler) {
-      ErrorUtils.setGlobalHandler((err: any, isFatal?: boolean) => {
-        captureException(err, isFatal ? 'fatal' : 'error');
-        origHandler && origHandler(err, isFatal);
-      });
+    // Global error capture (RN fatal) - only if available
+    try {
+      const origHandler = ErrorUtils?.getGlobalHandler?.();
+      if (ErrorUtils?.setGlobalHandler) {
+        ErrorUtils.setGlobalHandler((err: any, isFatal?: boolean) => {
+          captureException(err, isFatal ? 'fatal' : 'error');
+          origHandler && origHandler(err, isFatal);
+        });
+      }
+    } catch (e) {
+      // ErrorUtils not available in this environment (e.g., Expo Go)
+      logger.warn('ErrorUtils not available in this environment');
     }
   }, []);
 
   const initializeApp = async () => {
     try {
-  logger.info('App init start', { env: Env.BUILD_ENV });
+      logger.info('App init start', { env: Env.BUILD_ENV });
+      console.log('🚀 App initialization started');
+      
+      // Test database connection first
+      console.log('📡 Testing Supabase connection...');
       const supabaseConnected = await SupabaseService.testConnection();
       
       if (!supabaseConnected) {
-  logger.warn('Supabase not connected - offline mode');
+        logger.warn('Supabase not connected - offline mode');
+        console.warn('⚠️ Supabase not connected - running in offline mode');
+      } else {
+        console.log('✅ Supabase connection successful');
       }
 
-      // Initialize services
+      // Initialize services with detailed logging
+      console.log('🔧 Initializing services...');
+      
+      console.log('📶 Checking network status...');
       await NetworkService.getCurrentStatus();
       NetworkService.startListening();
+      
+      console.log('🔔 Requesting notification permissions...');
       await NotificationService.requestPermissions();
+      
+      console.log('📥 Initializing offline queue...');
       await OfflineQueueService.initialize();
 
       // Check if user is already logged in
+      console.log('👤 Checking for existing user session...');
       const existingUser = await AuthService.getCurrentUser();
       if (existingUser) {
+        console.log('✅ Found existing user:', existingUser.username);
         // Update user activity if connected
         if (supabaseConnected) {
           await AuthService.updateLastActive(existingUser.id);
         }
         setUser(existingUser);
         setCurrentScreen('home');
+      } else {
+        console.log('👤 No existing user session found');
       }
 
       PerformanceService.markAppReady();
-  // Count app open
-  try { await StorageService.incrementDailyOpenCount(); } catch (e) { /* noop */ }
+      console.log('✅ App initialization completed successfully');
+      
+      // Count app open
+      try { 
+        await StorageService.incrementDailyOpenCount(); 
+        console.log('📊 Daily open count incremented');
+      } catch (e) { 
+        console.warn('⚠️ Could not increment daily open count:', e);
+      }
     } catch (error) {
-  logger.error('App initialization error', error);
+      logger.error('App initialization error', error);
+      console.error('💥 CRITICAL: App initialization failed:', error);
+      console.error('Error details:', {
+        message: (error as Error)?.message || 'Unknown error',
+        stack: (error as Error)?.stack || 'No stack trace',
+        name: (error as Error)?.name || 'Unknown'
+      });
+      captureException(error, 'app-init-failed');
     } finally {
       setLoading(false);
+      console.log('🏁 App loading state cleared');
     }
   };
 

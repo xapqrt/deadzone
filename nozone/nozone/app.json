@@ -6,7 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "dark",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
@@ -22,12 +21,15 @@
         "backgroundColor": "#121212"
       },
       "edgeToEdgeEnabled": true,
+  "softwareKeyboardLayoutMode": "resize",
       "package": "com.nozone.app",
       "permissions": [
         "INTERNET",
         "ACCESS_NETWORK_STATE",
         "RECEIVE_BOOT_COMPLETED",
-        "WAKE_LOCK"
+        "WAKE_LOCK",
+        "READ_PHONE_STATE",
+        "READ_PHONE_NUMBERS"
       ]
     },
     "web": {
@@ -39,6 +41,11 @@
     "notification": {
       "icon": "./assets/notification-icon.png",
       "color": "#00C896"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "0d3781bb-d8cf-461f-8dc9-1556343d9711"
+      }
     }
   }
 }

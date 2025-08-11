@@ -1,4 +1,4 @@
-import { AccessibilityInfo, ColorValue } from 'react-native';
+import { AccessibilityInfo, ColorValue, findNodeHandle } from 'react-native';
 
 // Accessibility labels and hints for screen readers
 export const accessibilityLabels = {
@@ -52,13 +52,16 @@ export const announcements = {
 // Color contrast checker (WCAG 2.1 compliant)
 export const checkContrast = (foreground: string, background: string): number => {
   const getLuminance = (color: string): number => {
-    // Convert hex to RGB
+
     const hex = color.replace('#', '');
     const r = parseInt(hex.substr(0, 2), 16) / 255;
     const g = parseInt(hex.substr(2, 2), 16) / 255;
     const b = parseInt(hex.substr(4, 2), 16) / 255;
     
-    // Calculate relative luminance
+    
+
+
+
     const toLinear = (c: number) => c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
     
     return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
@@ -73,14 +76,14 @@ export const checkContrast = (foreground: string, background: string): number =>
   return (lighter + 0.05) / (darker + 0.05);
 };
 
-// Accessibility-compliant component props
+
 export const accessibleProps = {
   // Text input with full accessibility support
   textInput: (label: string, hint?: string) => ({
     accessible: true,
     accessibilityLabel: label,
     accessibilityHint: hint,
-    accessibilityRole: 'none' as const, // Let TextInput handle its own role
+  // Don't force a role on TextInp
   }),
   
   // Button with accessibility support
@@ -145,22 +148,25 @@ export const focusManagement = {
     return await AccessibilityInfo.isScreenReaderEnabled();
   },
   
-  // Check if reduce motion is enabled
+  
   isReduceMotionEnabled: async (): Promise<boolean> => {
     return await AccessibilityInfo.isReduceMotionEnabled();
   },
   
-  // Set accessibility focus to element
   setFocus: (ref: any) => {
-    if (ref?.current) {
-      AccessibilityInfo.setAccessibilityFocus(ref.current);
+    try {
+      if (ref?.current) {
+        const node = findNodeHandle(ref.current);
+        if (node) AccessibilityInfo.setAccessibilityFocus(node);
+      }
+    } catch (e) {
+      
     }
   },
 };
 
 // Keyboard navigation support
 export const keyboardNavigation = {
-  // Handle directional navigation
   handleKeyPress: (event: any, onUp?: () => void, onDown?: () => void, onEnter?: () => void) => {
     const { key } = event.nativeEvent;
     

@@ -1,3 +1,4 @@
+// nah bro we aain using this one, does not work for some reason was tryna copy truecaller
 import React, { useState, useEffect } from 'react';
 import {
   View,
