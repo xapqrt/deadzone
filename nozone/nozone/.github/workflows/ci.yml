@@ -1,0 +1,24 @@
+name: CI
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install deps
+        run: npm ci || npm install
+      - name: Type check
+        run: npx tsc --noEmit
+      - name: Lint (skip if no config)
+        run: |
+          if [ -f .eslintrc.js ] || [ -f .eslintrc.cjs ] || [ -f .eslintrc.json ]; then npx eslint . --ext .ts,.tsx || true; else echo 'No ESLint config'; fi
+      - name: Expo Doctor
+        run: npx expo doctor || true
